@@ -491,6 +491,11 @@ const renderSwatches = () => {
 	$("tool-erase").setAttribute("aria-pressed", String(editor.tool === ERASE));
 };
 
+$("overlay-swap").addEventListener("click", (e) => {
+	const swapped = $("detail-overlay").classList.toggle("swapped");
+	(e.currentTarget as HTMLElement).setAttribute("aria-pressed", String(swapped));
+});
+
 $("tool-erase").addEventListener("click", () => {
 	editor.tool = ERASE;
 	renderSwatches();
