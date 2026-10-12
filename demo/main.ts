@@ -5,7 +5,8 @@ import { createPixelSvg, type PixelResult, toSvg } from "../src/core.ts";
 import { collections, loadIcons, type SetInfo, search, setInfo, svgOf, themeOf } from "./api.ts";
 import { applyEdits, decodeStore, ERASE, type Edits, editKey, encodeStore, swatches, toCells } from "./edit.ts";
 import { download, manifest, pngSheet, type Sprite, svgSprite, svgZip } from "./export.ts";
-import { colorsOf, PALETTES } from "./palettes.ts";
+import { renderOptions, wirePicker } from "./palette-picker.ts";
+import { colorsOf, loadPalette, paletteOf } from "./palettes.ts";
 
 const PAGE = 96;
 // Shown on the landing page: outline, filled, emoji and logo sets, mixed so the range shows on the first screen.
@@ -334,7 +335,7 @@ const syncControls = () => {
 		el[k].value = String(state[k]);
 		$(`${k}-out`).textContent = String(state[k]);
 	}
-	el.pal.value = state.pal in PALETTES ? state.pal : "";
+	renderOptions(el.pal, state.pal);
 	el.query.value = state.query;
 	el.set.value = state.set;
 	syncInk();
@@ -361,9 +362,9 @@ for (const k of ["grid", "ink", "ss"] as const) {
 	});
 }
 
-el.pal.addEventListener("change", () => {
-	state.pal = el.pal.value;
-	syncInk();
+wirePicker(el.pal, $("pal-lospec"), $<HTMLInputElement>("pal-slug"), (slug) => {
+	state.pal = slug;
+	syncControls();
 	redraw();
 });
 el.pngInk.addEventListener("change", syncInk);
@@ -682,17 +683,23 @@ for (const button of document.querySelectorAll<HTMLButtonElement>("[data-export]
 	});
 }
 
-addEventListener("hashchange", () => {
+/** A link can name a Lospec palette this session hasn't loaded yet; one that won't load falls back to none. */
+const ensurePalette = async () => {
+	if (!state.pal || paletteOf(state.pal)) return;
+	try {
+		await loadPalette(state.pal);
+	} catch {
+		state.pal = "";
+	}
+};
+
+addEventListener("hashchange", async () => {
 	state = readHash();
+	await ensurePalette();
 	syncControls();
 	syncTray();
 	load();
 });
-
-el.pal.replaceChildren(
-	new Option("Icon's own", ""),
-	...Object.entries(PALETTES).map(([slug, { name, colors }]) => new Option(`${name} (${colors.length})`, slug)),
-);
 
 const sets = await collections();
 featured = FEATURED.flatMap((prefix) => (SAMPLES[prefix] ?? sets[prefix]?.samples ?? []).map((name) => `${prefix}:${name}`));
@@ -709,6 +716,7 @@ el.set.replaceChildren(
 		}),
 );
 
+await ensurePalette();
 syncControls();
 syncTray();
 load();

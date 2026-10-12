@@ -1,3 +1,5 @@
+import { MAX_PALETTE } from "./edit.ts";
+
 export interface Palette {
 	name: string;
 	colors: string[];
@@ -20,4 +22,36 @@ export const PALETTES: Record<string, Palette> = {
 	},
 };
 
-export const colorsOf = (slug: string) => PALETTES[slug]?.colors;
+const loaded = new Map<string, Palette>();
+
+export const paletteOf = (slug: string) => PALETTES[slug] ?? loaded.get(slug);
+export const colorsOf = (slug: string) => paletteOf(slug)?.colors;
+/** Palettes loaded from Lospec this session, for the picker. */
+export const loadedPalettes = () => [...loaded];
+
+/** Accepts a Lospec slug or a link to the palette's Lospec page. */
+export const slugOf = (input: string) =>
+	input.trim().toLowerCase().replace(/\/+$/, "").split("/").pop()?.replace(/\.json$/, "") ?? "";
+
+export const loadPalette = async (slug: string): Promise<Palette> => {
+	const known = paletteOf(slug);
+	if (known) return known;
+	// Slugs end up in the URL and in edit keys, so anything else is refused before it gets there.
+	if (!/^[a-z0-9-]+$/.test(slug)) throw new Error("That isn't a Lospec palette name.");
+	const missing = new Error(`Lospec has no palette called “${slug}”, or couldn't be reached.`);
+	// Lospec's 404s carry no CORS header, so a missing palette fails like a network error and the two can't be told apart.
+	const res = await fetch(`https://lospec.com/palette-list/${slug}.json`).catch(() => {
+		throw missing;
+	});
+	if (!res.ok) throw missing;
+	const { name, colors } = await res.json();
+	if (!Array.isArray(colors) || !colors.length || !colors.every((c) => /^[0-9a-f]{6}$/i.test(c))) {
+		throw new Error(`Couldn't read the colours of “${slug}”.`);
+	}
+	if (colors.length > MAX_PALETTE) {
+		throw new Error(`${name || slug} has ${colors.length} colours. Up to ${MAX_PALETTE} fit.`);
+	}
+	const palette = { name: String(name || slug), colors: hexes(colors.join(" ")) };
+	loaded.set(slug, palette);
+	return palette;
+};

@@ -36,7 +36,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wr
 label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
 output { color: var(--fg); font-weight: 600; margin-left: 6px; }
 label:has(output) { flex-direction: column; }
-select, input[type="search"], textarea, button {
+select, input[type="search"], input[type="text"], textarea, button {
 	font: inherit;
 	color: var(--fg);
 	background: var(--card);
