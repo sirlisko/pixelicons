@@ -1,9 +1,11 @@
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import wasmUrl from "@resvg/resvg-wasm/index_bg.wasm?url";
+import { nearestIn, snapToPalette } from "../src/color.ts";
 import { createPixelSvg, type PixelResult, toSvg } from "../src/core.ts";
 import { collections, loadIcons, type SetInfo, search, setInfo, svgOf, themeOf } from "./api.ts";
 import { applyEdits, decodeStore, ERASE, type Edits, editKey, encodeStore, swatches, toCells } from "./edit.ts";
 import { download, manifest, pngSheet, type Sprite, svgSprite, svgZip } from "./export.ts";
+import { colorsOf, PALETTES } from "./palettes.ts";
 
 const PAGE = 96;
 // Shown on the landing page: outline, filled, emoji and logo sets, mixed so the range shows on the first screen.
@@ -37,6 +39,8 @@ interface State {
 	grid: number;
 	ink: number;
 	ss: number;
+	/** Lospec slug of the palette to snap colours to, or "" for the icon's own colours. */
+	pal: string;
 }
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -48,6 +52,8 @@ const el = {
 	grid: $<HTMLInputElement>("grid"),
 	ink: $<HTMLInputElement>("ink"),
 	ss: $<HTMLInputElement>("ss"),
+	pal: $<HTMLSelectElement>("pal"),
+	pngInk: $<HTMLInputElement>("png-ink"),
 	icons: $("icons"),
 	status: $("status"),
 	pager: $("pager"),
@@ -85,6 +91,7 @@ const readHash = (): State => {
 		grid: num("grid"),
 		ink: num("ink"),
 		ss: num("ss"),
+		pal: p.get("pal") ?? "",
 	};
 };
 
@@ -99,6 +106,7 @@ const hashFor = (withSelection: boolean) => {
 	if (state.page) p.set("page", String(state.page));
 	if (state.view === "selection") p.set("view", "selection");
 	for (const k of ["grid", "ink", "ss"] as const) if (state[k] !== DEFAULTS[k]) p.set(k, String(state[k]));
+	if (state.pal) p.set("pal", state.pal);
 	if (withSelection && selection.length) p.set("sel", selection.join(","));
 	const edited = encodeStore(edits, shareable);
 	if (edited) p.set("edit", edited);
@@ -121,7 +129,9 @@ const pixelSvg = createPixelSvg((svg, size) => {
 
 const sprite = (svg: string): PixelResult | undefined => {
 	try {
-		return pixelSvg(svg, { grid: state.grid, ink: state.ink, supersample: state.ss });
+		const base = pixelSvg(svg, { grid: state.grid, ink: state.ink, supersample: state.ss });
+		const colors = colorsOf(state.pal);
+		return colors ? snapToPalette(base, colors) : base;
 	} catch {
 		return undefined;
 	}
@@ -130,12 +140,14 @@ const sprite = (svg: string): PixelResult | undefined => {
 const customSvgs = new Map<string, string>();
 const sourceOf = (id: string) => customSvgs.get(id) ?? svgOf(id);
 
-const editsOf = (id: string) => edits.get(editKey(id, state.grid));
+const keyOf = (id: string) => editKey(id, state.grid, state.pal);
+const editsOf = (id: string) => edits.get(keyOf(id));
+const swatchesFor = (svg: string, base: PixelResult) => swatches(svg, base, colorsOf(state.pal));
 
 /** The sprite with any hand edits for the current grid applied. */
 const spriteFor = (id: string, svg: string) => {
 	const base = sprite(svg);
-	return base && applyEdits(base, editsOf(id), swatches(svg, base), state.grid);
+	return base && applyEdits(base, editsOf(id), swatchesFor(svg, base), state.grid);
 };
 
 let list: string[] = [];
@@ -322,8 +334,17 @@ const syncControls = () => {
 		el[k].value = String(state[k]);
 		$(`${k}-out`).textContent = String(state[k]);
 	}
+	el.pal.value = state.pal in PALETTES ? state.pal : "";
 	el.query.value = state.query;
 	el.set.value = state.set;
+	syncInk();
+};
+
+/** Keeps the PNG ink on the palette, so single-colour icons export in one of its colours too. */
+const syncInk = () => {
+	const colors = colorsOf(state.pal);
+	$("ink-colors").replaceChildren(...(colors ?? []).map((c) => new Option(c, c)));
+	if (colors) el.pngInk.value = nearestIn(colors)(el.pngInk.value);
 };
 
 const go = (patch: Partial<State>) => {
@@ -340,8 +361,15 @@ for (const k of ["grid", "ink", "ss"] as const) {
 	});
 }
 
+el.pal.addEventListener("change", () => {
+	state.pal = el.pal.value;
+	syncInk();
+	redraw();
+});
+el.pngInk.addEventListener("change", syncInk);
+
 $("reset").addEventListener("click", () => {
-	Object.assign(state, DEFAULTS);
+	Object.assign(state, DEFAULTS, { pal: "" });
 	syncControls();
 	redraw();
 });
@@ -408,7 +436,7 @@ const openDetail = (id: string) => {
 	if (current !== id) editor.tool = 0;
 	current = id;
 	editor.base = sprite(svg);
-	editor.colors = editor.base ? swatches(svg, editor.base) : [];
+	editor.colors = editor.base ? swatchesFor(svg, editor.base) : [];
 	editor.tool = Math.min(editor.tool, editor.colors.length - 1);
 	for (const box of ["detail-src", "detail-px", "detail-overlay"]) $(box).style.setProperty("--grid", String(state.grid));
 	$("detail-src").innerHTML = svg;
@@ -438,7 +466,7 @@ const renderDetail = () => {
 		.map((n) => `<div>${currentSvg.replace("<svg ", `<svg width="${state.grid * n}" height="${state.grid * n}" `)}<span>${n}×</span></div>`)
 		.join("");
 	$("detail-code").textContent = currentPath;
-	($("edit-undo") as HTMLButtonElement).disabled = !editor.undo.get(editKey(id, state.grid))?.length;
+	($("edit-undo") as HTMLButtonElement).disabled = !editor.undo.get(keyOf(id))?.length;
 	($("edit-reset") as HTMLButtonElement).disabled = !editsOf(id)?.size;
 };
 
@@ -474,7 +502,7 @@ const commit = (id: string) => {
 };
 
 const snapshot = (id: string) => {
-	const key = editKey(id, state.grid);
+	const key = keyOf(id);
 	const stack = editor.undo.get(key) ?? [];
 	stack.push(new Map(edits.get(key)));
 	editor.undo.set(key, stack.slice(-100));
@@ -482,7 +510,7 @@ const snapshot = (id: string) => {
 
 const undo = () => {
 	if (!current) return;
-	const key = editKey(current, state.grid);
+	const key = keyOf(current);
 	const previous = editor.undo.get(key)?.pop();
 	if (!previous) return;
 	if (previous.size) edits.set(key, previous);
@@ -494,7 +522,7 @@ $("edit-undo").addEventListener("click", undo);
 $("edit-reset").addEventListener("click", () => {
 	if (!current || !editsOf(current)?.size) return;
 	snapshot(current);
-	edits.delete(editKey(current, state.grid));
+	edits.delete(keyOf(current));
 	commit(current);
 });
 
@@ -526,7 +554,7 @@ let stroke: { op: number; last: number } | undefined;
 
 const paint = (id: string, i: number, op: number) => {
 	if (!editor.base) return;
-	const key = editKey(id, state.grid);
+	const key = keyOf(id);
 	const map = edits.get(key) ?? new Map();
 	const original = toCells(editor.base, state.grid)[i];
 	const value = op === ERASE ? null : editor.colors[op];
@@ -627,7 +655,7 @@ for (const button of document.querySelectorAll<HTMLButtonElement>("[data-export]
 		button.disabled = true;
 		try {
 			const sprites = await selectedSprites();
-			const settings = { grid: state.grid, ink: state.ink, supersample: state.ss };
+			const settings = { grid: state.grid, ink: state.ink, supersample: state.ss, ...(state.pal && { palette: state.pal }) };
 			const base = `pixel-icons-${state.grid}`;
 			switch (button.dataset.export) {
 				case "zip":
@@ -638,7 +666,7 @@ for (const button of document.querySelectorAll<HTMLButtonElement>("[data-export]
 					break;
 				case "png": {
 					const scale = Number($<HTMLSelectElement>("png-scale").value);
-					download(`${base}@${scale}x.png`, await pngSheet(sprites, settings, scale, $<HTMLInputElement>("png-ink").value), "image/png");
+					download(`${base}@${scale}x.png`, await pngSheet(sprites, settings, scale, el.pngInk.value), "image/png");
 					break;
 				}
 				case "json":
@@ -660,6 +688,11 @@ addEventListener("hashchange", () => {
 	syncTray();
 	load();
 });
+
+el.pal.replaceChildren(
+	new Option("Icon's own", ""),
+	...Object.entries(PALETTES).map(([slug, { name, colors }]) => new Option(`${name} (${colors.length})`, slug)),
+);
 
 const sets = await collections();
 featured = FEATURED.flatMap((prefix) => (SAMPLES[prefix] ?? sets[prefix]?.samples ?? []).map((name) => `${prefix}:${name}`));

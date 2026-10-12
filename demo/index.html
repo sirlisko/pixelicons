@@ -60,6 +60,7 @@
 		<label>Grid <output id="grid-out"></output><input id="grid" type="range" min="8" max="32" step="1" value="16"></label>
 		<label>Ink <output id="ink-out"></output><input id="ink" type="range" min="1" max="255" step="1" value="100"></label>
 		<label>Supersample <output id="ss-out"></output><input id="ss" type="range" min="2" max="16" step="1" value="12"></label>
+		<label>Palette <select id="pal"></select></label>
 		<button type="button" id="reset">Reset</button>
 	</fieldset>
 </form>
@@ -94,7 +95,7 @@
 	<button type="button" data-export="sprite" data-umami-event="export" data-umami-event-format="sprite">SVG sprite</button>
 	<button type="button" data-export="png" data-umami-event="export" data-umami-event-format="png">PNG sheet</button>
 	<label class="inline">at <select id="png-scale"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>×</label>
-	<label class="inline" title="Colour for single-colour icons in the PNG">ink <input id="png-ink" type="color" value="#1b1b19"></label>
+	<label class="inline" title="Colour for single-colour icons in the PNG">ink <input id="png-ink" type="color" value="#1b1b19" list="ink-colors"><datalist id="ink-colors"></datalist></label>
 	<button type="button" data-export="json" data-umami-event="export" data-umami-event-format="json">JSON</button>
 	<span class="sep"></span>
 	<button type="button" id="share" data-umami-event="copy-link">Copy link</button>
