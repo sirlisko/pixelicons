@@ -39,13 +39,13 @@ The core in [`src/core.ts`](src/core.ts) has no dependencies and works with any 
 ## Development
 
 ```sh
-npm install
-npm run dev        # the page
-npm test           # vitest
-npm run typecheck
-npm run build      # static site into site/
-npm run sheet      # full-set contact sheets into out/ (--ink=<n>)
-npm run parity     # compares the core against the sharp pipeline it started from
+pnpm install
+pnpm dev           # the page
+pnpm test          # vitest
+pnpm typecheck
+pnpm build         # static site into site/
+pnpm sheet         # full-set contact sheets into out/ (--ink=<n>)
+pnpm parity        # compares the core against the sharp pipeline it started from
 ```
 
 Pushes to `main` deploy the page to GitHub Pages.

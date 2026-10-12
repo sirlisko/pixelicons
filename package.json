@@ -10,13 +10,14 @@
     "url": "git+https://github.com/sirlisko/pixelicons.git"
   },
   "homepage": "https://pixelicons.sirlisko.com",
+  "packageManager": "pnpm@12.10.1",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "sheet": "tsx scripts/contact-sheet.ts",
-		"og": "tsx scripts/og.ts",
+    "og": "tsx scripts/og.ts",
     "parity": "tsx scripts/parity.ts"
   },
   "dependencies": {
