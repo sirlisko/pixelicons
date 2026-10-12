@@ -151,6 +151,10 @@ figcaption { font-size: 11px; color: var(--muted); margin-top: 6px; }
 .path { margin-top: 12px; }
 .path summary { cursor: pointer; font-size: 12px; color: var(--muted); }
 .path code { display: block; margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; max-height: 9em; overflow: auto; }
+.about { margin-top: 48px; max-width: 72ch; }
+.about h2 { font-size: 16px; margin: 24px 0 8px; }
+.about p, .about li { color: var(--muted); }
+.about ul { padding-left: 20px; }
 footer { margin-top: 40px; color: var(--muted); font-size: 12px; }
 @media (max-width: 560px) {
 	input[type="range"] { width: 120px; }
