@@ -5,8 +5,9 @@ Turn any [Iconify](https://iconify.design) icon into crisp pixel art.
 **→ [pixelicons.sirlisko.com](https://pixelicons.sirlisko.com)**
 
 - **Find icons.** Browse any of Iconify's 200+ sets, or search across all of them. Narrow a set down by style (e.g. Phosphor Bold, Material Symbols Rounded) or category. From any icon, **More in this style** jumps to its set and style, so the rest of your icons match.
-- **Tune.** Change the grid size, the ink threshold and the supersampling. Each icon has a detail view that overlays the original on the sprite.
-- **Edit pixels.** In the detail view, paint with the icon's own colours, erase, and undo (⌘/Ctrl+Z). Use it to clean up what the conversion gets wrong, such as lines that come out 2px wide or tiny badges. Edits are stored per grid size, show up in every export, and are saved in the share link.
+- **Tune.** Change the grid size, the ink threshold and the supersampling. Each icon has a detail view that overlays the original on the sprite, either way round.
+- **Palettes.** Snap colour icons to Game Boy, PICO-8, Endesga 32 or any [Lospec](https://lospec.com/palette-list) palette of up to 35 colours, by name or link. Single-colour icons stay recolourable, and the PNG ink snaps to the palette.
+- **Edit pixels.** In the detail view, paint with the icon's own colours (or the palette's), erase, and undo (⌘/Ctrl+Z). Use it to clean up what the conversion gets wrong, such as lines that come out 2px wide or tiny badges. Edits are stored per grid size and palette, show up in every export, and are saved in the share link.
 - **Export.** Tick the icons you want, then download them in any of these formats:
 
   | Format | Contents |
@@ -29,6 +30,8 @@ Exported icons keep the licence of the set they come from.
 4. Horizontal runs of filled pixels are merged into a single path.
 
 Icons drawn with fixed colours, such as emoji and logos, keep them. Each pixel takes the closest colour from the icon's own palette. Icons drawn in `currentColor` stay single-colour, so you can recolour them.
+
+With a palette picked, each of the icon's colours moves to the nearest palette colour, compared in [OKLab](https://bottosson.github.io/posts/oklab/) so "nearest" is what the eye sees. Palettes that are shades of one hue, like the Game Boy's greens, are matched by lightness instead, black to the darkest shade and white to the lightest.
 
 Outline sets that use strokes come out best, e.g. Lucide, Tabler and Feather. Filled sets look heavier and lose some detail.
 
