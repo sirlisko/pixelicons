@@ -5,10 +5,20 @@ export type Edits = Map<number, number>;
 
 export const ERASE = -1;
 
-/** The colours an icon can be painted with: its own palette, or just currentColor for single-colour icons. */
-export const swatches = (svg: string, base: PixelResult) =>
-	// Capped so each colour fits one base-36 character in the URL.
-	base.layers ? palette(svg).map((s) => s.fill).slice(0, 36) : ["currentColor"];
+// Each colour is one base-36 character in the URL.
+const MAX_SWATCHES = 36;
+/** Leaves room for currentColor next to the palette on single-colour icons. */
+export const MAX_PALETTE = MAX_SWATCHES - 1;
+
+/**
+ * The colours an icon can be painted with: the picked palette if there is one, otherwise the icon's own colours, or
+ * just currentColor for single-colour icons.
+ */
+export const swatches = (svg: string, base: PixelResult, picked?: string[]) => {
+	const own = base.layers ? palette(svg).map((s) => s.fill) : ["currentColor"];
+	const colors = picked ? [...(base.layers ? [] : ["currentColor"]), ...picked] : own;
+	return colors.slice(0, MAX_SWATCHES);
+};
 
 /** Fill per pixel, or null where the sprite is empty. */
 export const toCells = (result: PixelResult, grid: number) => {
@@ -53,9 +63,10 @@ const decodeEdits = (text: string): Edits => {
 	return edits;
 };
 
-export const editKey = (id: string, grid: number) => `${id}~${grid}`;
+// Edits store swatch indexes, which mean different colours under another palette, so each palette keeps its own.
+export const editKey = (id: string, grid: number, pal = "") => (pal ? `${id}~${grid}~${pal}` : `${id}~${grid}`);
 
-/** `id~grid~changes` entries joined by "." (ids may contain ":" and "-"). */
+/** `id~grid~changes` or `id~grid~palette~changes` entries joined by "." (ids may contain ":" and "-"). */
 export const encodeStore = (store: Map<string, Edits>, keep: (key: string) => boolean) =>
 	[...store]
 		.filter(([key, edits]) => edits.size && keep(key))
@@ -65,8 +76,9 @@ export const encodeStore = (store: Map<string, Edits>, keep: (key: string) => bo
 export const decodeStore = (text: string) => {
 	const store = new Map<string, Edits>();
 	for (const entry of text.split(".")) {
-		const [id, grid, changes] = entry.split("~");
-		if (id && grid && changes) store.set(editKey(id, Number(grid)), decodeEdits(changes));
+		const [id, grid, ...rest] = entry.split("~");
+		const changes = rest.pop();
+		if (id && grid && changes && rest.length <= 1) store.set(editKey(id, Number(grid), rest[0]), decodeEdits(changes));
 	}
 	return store;
 };

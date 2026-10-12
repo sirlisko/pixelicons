@@ -10,6 +10,8 @@ export interface Settings {
 	grid: number;
 	ink: number;
 	supersample: number;
+	/** Lospec slug of the palette colours were snapped to. */
+	palette?: string;
 }
 
 const fileName = (id: string) => id.replace(":", "-");

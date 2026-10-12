@@ -60,6 +60,8 @@
 		<label>Grid <output id="grid-out"></output><input id="grid" type="range" min="8" max="32" step="1" value="16"></label>
 		<label>Ink <output id="ink-out"></output><input id="ink" type="range" min="1" max="255" step="1" value="100"></label>
 		<label>Supersample <output id="ss-out"></output><input id="ss" type="range" min="2" max="16" step="1" value="12"></label>
+		<label>Palette <select id="pal"></select></label>
+		<label id="pal-lospec" hidden><span>Lospec palette · <a href="https://lospec.com/palette-list" target="_blank" rel="noopener">Browse palettes ↗</a></span> <input id="pal-slug" type="text" spellcheck="false" placeholder="name or link, e.g. sweetie-16"></label>
 		<button type="button" id="reset">Reset</button>
 	</fieldset>
 </form>
@@ -94,7 +96,7 @@
 	<button type="button" data-export="sprite" data-umami-event="export" data-umami-event-format="sprite">SVG sprite</button>
 	<button type="button" data-export="png" data-umami-event="export" data-umami-event-format="png">PNG sheet</button>
 	<label class="inline">at <select id="png-scale"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>×</label>
-	<label class="inline" title="Colour for single-colour icons in the PNG">ink <input id="png-ink" type="color" value="#1b1b19"></label>
+	<label class="inline" title="Colour for single-colour icons in the PNG">ink <input id="png-ink" type="color" value="#1b1b19" list="ink-colors"><datalist id="ink-colors"></datalist></label>
 	<button type="button" data-export="json" data-umami-event="export" data-umami-event-format="json">JSON</button>
 	<span class="sep"></span>
 	<button type="button" id="share" data-umami-event="copy-link">Copy link</button>
@@ -106,14 +108,14 @@
 	<div class="compare">
 		<figure><div id="detail-src" class="big"></div><figcaption>original</figcaption></figure>
 		<figure><div id="detail-px" class="big editable"></div><figcaption>sprite · click or drag to edit</figcaption></figure>
-		<figure><div id="detail-overlay" class="big overlay"></div><figcaption>overlay</figcaption></figure>
+		<figure><div id="detail-overlay" class="big overlay"></div><figcaption>overlay · <button type="button" id="overlay-swap" class="link" aria-pressed="false">sprite on top</button></figcaption></figure>
 	</div>
 	<div class="editor">
 		<div id="swatches" class="swatches"></div>
 		<button type="button" id="tool-erase" aria-pressed="false">Erase</button>
 		<button type="button" id="edit-undo">Undo</button>
 		<button type="button" id="edit-reset">Reset pixels</button>
-		<p class="hint">Pick a colour and paint. Starting on a pixel that's already that colour erases instead. Edits are kept per grid size and saved in the share link.</p>
+		<p class="hint">Pick a colour and paint. Starting on a pixel that's already that colour erases instead. Edits are kept per grid size and palette, and saved in the share link.</p>
 	</div>
 	<div class="scales" id="detail-scales"></div>
 	<div class="actions">
@@ -122,8 +124,11 @@
 		<button type="button" id="copy-svg" data-umami-event="copy-svg">Copy SVG</button>
 		<button type="button" id="download-svg" data-umami-event="download-svg">Download SVG</button>
 		<button type="button" id="copy-d">Copy path</button>
-		<code id="detail-code"></code>
 	</div>
+	<details class="path">
+		<summary>Path data</summary>
+		<code id="detail-code"></code>
+	</details>
 </dialog>
 
 <footer>

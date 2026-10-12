@@ -36,7 +36,7 @@ fieldset { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wr
 label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
 output { color: var(--fg); font-weight: 600; margin-left: 6px; }
 label:has(output) { flex-direction: column; }
-select, input[type="search"], textarea, button {
+select, input[type="search"], input[type="text"], textarea, button {
 	font: inherit;
 	color: var(--fg);
 	background: var(--card);
@@ -137,13 +137,20 @@ figcaption { font-size: 11px; color: var(--muted); margin-top: 6px; }
 	position: relative;
 }
 .big svg { width: 100%; height: 100%; display: block; position: absolute; inset: 0; }
+.overlay > div { position: absolute; inset: 0; }
 .overlay .px-layer { opacity: 0.35; }
 .overlay .src-layer { color: var(--accent); }
+/* Colour originals are filled and hide the sprite beneath them. Swapped, the sprite goes on top, and the original
+   turns grey so the two still differ where they share a colour. */
+.overlay.swapped .px-layer { opacity: 0.6; z-index: 1; }
+.overlay.swapped .src-layer { filter: grayscale(1); opacity: 0.5; }
 .scales { display: flex; gap: 16px; align-items: end; margin: 16px 0; flex-wrap: wrap; }
 .scales div { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--muted); }
 .scales svg { display: block; image-rendering: pixelated; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.actions code { white-space: pre-wrap; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; max-height: 4.5em; overflow: auto; flex-basis: 100%; }
+.path { margin-top: 12px; }
+.path summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.path code { display: block; margin-top: 6px; white-space: pre-wrap; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; max-height: 9em; overflow: auto; }
 footer { margin-top: 40px; color: var(--muted); font-size: 12px; }
 @media (max-width: 560px) {
 	input[type="range"] { width: 120px; }

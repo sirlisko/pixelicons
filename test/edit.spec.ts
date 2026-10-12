@@ -43,6 +43,11 @@ describe("applyEdits", () => {
 		expect(edited.layers?.find((l) => l.fill === "#1d3557")?.d).toContain("M0 0h1");
 	});
 
+	test("paints with the picked palette instead of the icon's own colours", () => {
+		expect(swatches(flagSvg, flag, ["#000000", "#ffffff"])).toEqual(["#000000", "#ffffff"]);
+		expect(swatches(flagSvg, mono, ["#000000"])).toEqual(["currentColor", "#000000"]);
+	});
+
 	test("leaves the sprite alone without edits", () => {
 		expect(applyEdits(mono, new Map(), ["currentColor"], 4)).toBe(mono);
 	});
@@ -52,6 +57,7 @@ test("edit store survives the URL", () => {
 	const store = new Map<string, Edits>([
 		[editKey("lucide:mail", 16), new Map([[0, 0], [255, ERASE]])],
 		[editKey("twemoji:rocket", 32), new Map([[1023, 3]])],
+		[editKey("twemoji:rocket", 32, "endesga-32"), new Map([[7, 2]])],
 		[editKey("pasted", 16), new Map([[1, 0]])],
 	]);
 	const text = encodeStore(store, (key) => key.includes(":"));
